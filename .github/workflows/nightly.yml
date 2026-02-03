@@ -1,0 +1,32 @@
+name: Nightly Deployment
+
+on:
+  schedule:
+    - cron: "0 18 * * *"   # 2 AM Malaysia time
+  workflow_dispatch:        # allow manual trigger
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+
+      - name: Build site
+        run: hugo -s docs -d public
+
+      - name: Docker build
+        run: docker build -t nightly-blog .
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push image
+        run: |
+          docker tag nightly-blog ghcr.io/${{ github.repository }}/nightly-blog:latest
+          docker push ghcr.io/${{ github.repository }}/nightly-blog:latest
