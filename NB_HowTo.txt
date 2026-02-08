@@ -1,0 +1,166 @@
+# Nightly Blog Deployment Guide
+
+This guide walks through the full process of building, running, and deploying a MkDocs site using Docker and GitHub Container Registry (GHCR). Each step includes explanations to help you understand what’s happening.
+
+---
+
+## 1. Create Project Structure
+
+Create a new folder for your project:
+    mkdir nightly-blog
+    cd nightly-blog
+
+Inside this folder, create the following structure:
+    ├── docs/
+    │   ├── index.md
+    │   ├── about.md
+    │   └── posts/
+    │       └── first-post.md
+    ├── mkdocs.yml
+    ├── Dockerfile
+    └── .github/
+        └── workflows/
+            └── nightly.yml
+
+Explanation:
+- `docs/` contains your Markdown content.
+- `mkdocs.yml` configures the site layout, theme, and assets.
+- `Dockerfile` builds and serves the site.
+- `.github/workflows/nightly.yml` automates nightly builds via GitHub Actions.
+
+---
+
+## 2. Write MkDocs Content
+
+Create `docs/index.md` with basic content:
+    # Hello Nightly Blog
+    This is my very first MkDocs page!
+
+Create additional pages like `about.md` and `posts/first-post.md`.
+
+---
+
+## 3. Configure MkDocs
+
+Create `mkdocs.yml` at the root:
+    site_name: Nightly Blog
+    nav:
+      - Home: index.md
+      - About: about.md
+      - Posts:
+          - First Post: posts/first-post.md
+    theme:
+      name: material
+    extra_css:
+      - custom.css
+    extra:
+      favicon: favicon.ico
+
+Explanation:
+- `site_name` sets the site title.
+- `nav` defines the navigation menu.
+- `theme` applies the Material theme.
+- `extra_css` and `extra` add branding.
+
+---
+
+## 4. Add Branding Assets
+
+Create `docs/custom.css` with styling:
+    h1 {
+      color: #e22a7a;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+Add `docs/favicon.ico` for browser tab icon.
+
+---
+
+## 5. Write Dockerfile
+
+Create `Dockerfile` at the root:
+    FROM python:3.11-slim AS builder
+    WORKDIR /src
+    COPY . .
+    RUN pip install mkdocs
+    RUN mkdocs build -f mkdocs.yml
+
+    FROM nginx:alpine
+    COPY --from=builder /src/site /usr/share/nginx/html
+
+Explanation:
+- Stage 1 builds the MkDocs site.
+- Stage 2 serves it with Nginx.
+
+---
+
+## 6. Build and Run Locally
+
+Build the Docker image:
+    docker build -t nightly-blog .
+
+Run the container:
+    docker run -p 8888:80 nightly-blog
+
+Visit `http://localhost:8888` to view the site.
+
+If port 8080 is busy, use another port like 8888.
+
+---
+
+## 7. Push to GitHub Container Registry (GHCR)
+
+Log in to GHCR:
+    echo YOUR_GITHUB_TOKEN | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+
+Tag the image:
+    docker tag nightly-blog ghcr.io/YOUR_GITHUB_USERNAME/nightly-blog:latest
+
+Push the image:
+    docker push ghcr.io/YOUR_GITHUB_USERNAME/nightly-blog:latest
+
+Explanation:
+- GHCR stores your image so you can pull it from any machine.
+
+---
+
+## 8. Automate Nightly Builds
+
+Create `.github/workflows/nightly.yml`:
+    name: Nightly Build
+    on:
+      schedule:
+        - cron: "0 0 * * *"
+      workflow_dispatch:
+
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - name: Log in to GHCR
+            run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          - name: Build Docker image
+            run: docker build -t ghcr.io/${{ github.actor }}/nightly-blog:latest .
+          - name: Push Docker image
+            run: docker push ghcr.io/${{ github.actor }}/nightly-blog:latest
+
+Explanation:
+- GitHub builds and pushes your image every night at midnight UTC.
+
+---
+
+## 9. Pull and Run Anywhere
+
+On any machine:
+    docker pull ghcr.io/YOUR_GITHUB_USERNAME/nightly-blog:latest
+    docker run -p 8080:80 ghcr.io/YOUR_GITHUB_USERNAME/nightly-blog:latest
+
+Explanation:
+- You can now run your site anywhere without rebuilding.
+
+---
+
+## Done!
+
+You’ve built a fully automated, containerized MkDocs site with nightly updates and cloud deployment. You can now expand content, polish styling, or publish to GitHub Pages or Netlify if desired.
