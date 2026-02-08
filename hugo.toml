@@ -1,0 +1,4 @@
+baseURL = "https://<your-username>.github.io/nightly-blog/"
+languageCode = "en-us"
+title = "Nightly Blog"
+theme = "ananke"

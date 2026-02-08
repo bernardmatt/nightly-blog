@@ -1,0 +1,13 @@
+site_name: Nightly Blog
+nav:
+  - Home: index.md
+  - About: about.md
+  - Posts:
+      -First Post: posts/first-post.md
+theme:
+  name: material
+  
+ extra_css:
+    - custom.css
+ extra:
+    favicon: favicon.ico
