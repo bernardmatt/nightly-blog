@@ -1,13 +1,16 @@
 site_name: Nightly Blog
+
 nav:
   - Home: index.md
   - About: about.md
   - Posts:
-      -First Post: posts/first-post.md
+      - First Post: posts/first-post.md
+
 theme:
-  name: material
-  
- extra_css:
-    - custom.css
- extra:
-    favicon: favicon.ico
+  name: readthedocs
+
+extra_css:
+  - custom.css
+
+extra:
+  favicon: favicon.ico
